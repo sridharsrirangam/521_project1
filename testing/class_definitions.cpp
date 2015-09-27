@@ -1,19 +1,26 @@
 #include <iostream>
 #include "class_definitions.h"
 
+typedef unsigned int uint;
 #define DEBUG 0
 
+/*
 unsigned int L1_reads=0;
 unsigned int L1_writes=0;
 unsigned int L1_read_misses=0;
 unsigned int L1_write_misses=0;
+unsigned int total_misses=0;
+*/
 
 
-int count=0;
 //function for cpu to request L1 or L1 to request L2
+//void cache_class::request_block(unsigned int address,char operation,unsigned int &Level_reads,unsigned int  &Level_read_misses,unsigned int  &Level_writes,uint &Level_write_misses, cache_class *next_level)
 void cache_class::request_block(unsigned int address,char operation)
-{ unsigned int address_noblock,address_noset,set_id;
-   
+{
+    unsigned int address_noblock,address_noset,set_id;
+   bool hit_or_miss=0;
+   int block_id;
+
     address_noblock=(address>>block_bits);
     address_noset=(address_noblock>>set_bits);
     set_id=(address_noblock%address_noset);
@@ -21,15 +28,25 @@ void cache_class::request_block(unsigned int address,char operation)
     cout<<"-------------- "<<endl;
     cout<<"# "<<dec<<count<<" : "<<hex<<address<<" ( tag "<<address_noset<<" , index "<<dec<<set_id<<")"<<endl;
     
-    set_incache[set_id].check_tag(address_noset,operation);
+    hit_or_miss=set_incache[set_id].check_tag(address_noset,operation,address);
     if(operation=='r')
-        L1_reads++;
+       Level_reads++;
     else if(operation=='w')
-        L1_writes++;
+        Level_writes++;
+    if(hit_or_miss==0)
+    {   if(next_level!=NULL)
+        next_level->request_block(address,'r');
+
+        if(operation=='r') Level_read_misses++;
+        else if(operation=='w')Level_write_misses++;
+    }
+    
+
 }
 
 
-void set::check_tag(unsigned int tag_address,char operation)
+//void set::check_tag(unsigned int tag_address,uint addressNextLevel,cache_class *next_level,char operation,unsigned int &Level_read_misses, unsigned int &Level_write_misses)
+int set::check_tag(unsigned int tag_address,char operation,unsigned int address_org)
 {
     unsigned int tag_requested=tag_address;
     int temp_block_id;
@@ -37,7 +54,7 @@ void set::check_tag(unsigned int tag_address,char operation)
   //  cout<<"tag address "<<hex<<tag_requested<<endl;
     for(int i=0;i<ASSOC;i++)
     {
-        if((tag_requested==block_inset[i].tag)&&(block_inset[i].valid_bit=1)){
+        if((tag_requested==block_inset[i].tag)&&(block_inset[i].valid_bit==1)){
             temp_block_id=i;
             hit_in_set=1;
         }//end of if
@@ -47,15 +64,20 @@ void set::check_tag(unsigned int tag_address,char operation)
         //code for miss handling
        // next_level.request_block(tag_requested);
        // LRU_increment(); //maybe not required here if called in allocate funtion
-        if(operation=='r')
-            L1_read_misses++;
-        else if(operation=='w')
-            L1_write_misses++;
-        allocate_and_assign(tag_requested,operation);
+      // total_misses++;
+      // if(operation=='r')
+           // Level_read_misses++;
+       // else if(operation=='w')
+           // Level_write_misses++;
+        allocate_and_assign(tag_requested,operation,address_org);
+       /* if(*next_level!=NULL)
+        {
+        next_level->request_block(addressNextLevel,operation,NULL);
+        }*/
 
 #ifdef DEBUG
         cout<<hex<<"MISS    ";
-        if(operation='w') cout<<"write"<<endl;
+        if(operation=='w') cout<<"write"<<endl;
 #endif
 
     }
@@ -73,7 +95,9 @@ void set::check_tag(unsigned int tag_address,char operation)
          }//end of if
 
     }
+return hit_in_set;
 }
+
 
 void set::LRU_increment(int block_id){
     for(int i=0;i<ASSOC;i++)
@@ -83,7 +107,7 @@ void set::LRU_increment(int block_id){
     LRU_bits[block_id]=0;
 }
 
-void set::allocate_and_assign(unsigned int tag_requested,char operation)
+void set::allocate_and_assign(unsigned int tag_requested,char operation,unsigned int address_org)
 { 
     int max=0;
     int index_id;
@@ -95,9 +119,19 @@ void set::allocate_and_assign(unsigned int tag_requested,char operation)
         }//end of if
     }//end of for
         //write function to check dirty bit and identify to call L2 request or not here
+       if(block_inset[index_id].dirty_bit==1)
+       {
+           if(next_level!=NULL)
+           {
+            next_level->request_block(address_org,'w');
+           }
+
+       }
         block_inset[index_id].tag=tag_requested;
         block_inset[index_id].valid_bit=1;
         block_inset[index_id].dirty_bit=0;
+        //written now
+        LRU_increment(index_id);
         if(operation=='w')
         {
            block_inset[index_id].dirty_bit=1;
@@ -126,6 +160,11 @@ void cache_class::print_cache()
     }
     cout<<"\n";
     }
+    cout<<"L1_reads "<<dec<<Level_reads<<endl;
+       cout<<"L1_read_misses "<<Level_read_misses<<endl;
+       cout<<"L1_writes "<<Level_writes<<endl;
+       cout<<"L1_write_misses "<<Level_write_misses<<endl;
+
 }
 int set::minimum()
 {

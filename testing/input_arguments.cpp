@@ -11,7 +11,6 @@
 
 using namespace std;
 
-extern unsigned int L1_reads,L1_writes,L1_read_misses,L1_write_misses;
 
 int main(int argc, char *argv[])
 { int block_size,L1_size,L1_assoc,vc_num_blocks,L2_size,L2_assoc;
@@ -22,7 +21,10 @@ int main(int argc, char *argv[])
   char operation;
   unsigned int addr_file;
   int L1_number_of_sets,L2_number_of_sets;
-  cout<<log2(4)<<endl; 
+ 
+  unsigned int L1_reads=0,L1_writes=0,L1_read_misses=0,L1_write_misses=0;
+  unsigned int L2_misses=0,L2_writes=0,L2_read_misses=0,L2_write_misses=0;
+ 
   if(argc!=8){
         cout<<"invalid arguments"<<endl;
        // exit(1);
@@ -57,9 +59,28 @@ int main(int argc, char *argv[])
     cout<<"number of sets in L2 is "<<L2_number_of_sets<<endl;
 
 #endif
-    cache_class L1_cache((L1_size/(L1_assoc*block_size)),L1_assoc,block_size);
+   // if(L2_size==0)
+    
+    cache_class *next_level_L2;
+   cache_class L2_cache((L2_size/(L2_assoc*block_size)),L2_assoc,block_size,NULL,2);
+    if(L2_size!=0)
+    { L2_cache.Level_reads=0;
+    L2_cache.Level_read_misses=0;
+    L2_cache.Level_writes=0;
+    L2_cache.Level_write_misses=0;
+    next_level_L2 = &L2_cache;
+   }
+    if(L2_size==0)
+    {
+        next_level_L2=NULL;
+    }
+    cache_class L1_cache((L1_size/(L1_assoc*block_size)),L1_assoc,block_size,next_level_L2,1);
+    L1_cache.Level_reads=0;
+    L1_cache.Level_writes=0;
+    L1_cache.Level_read_misses=0;
+    L1_cache.Level_write_misses=0;
     //L1_cache.cache_init(L1_number_of_sets,L1_assoc);
-    cout<<L1_cache.set_incache[0].block_inset[0].valid_bit<<endl;
+   // cout<<L1_cache.set_incache[0].block_inset[0].valid_bit<<endl;
     ifstream myfile(argv[7]);
    if(myfile.is_open())
    {
@@ -68,16 +89,22 @@ int main(int argc, char *argv[])
          operation = line[0];
          trace=line.substr(2,8);
          addr_file=(unsigned int)strtoul(trace.c_str(),NULL,16);
+         
          L1_cache.request_block(addr_file,operation);
+         
 #ifdef DEBUG
         // cout<<hex<<addr_file<<endl;
 #endif
        }
        L1_cache.print_cache();
-       cout<<"L1_reads "<<dec<<L1_reads<<endl;
+       if(L2_size!=0)
+       {
+        L2_cache.print_cache();
+       }
+       /*cout<<"L1_reads "<<dec<<L1_reads<<endl;
        cout<<"L1_read_misses "<<L1_read_misses<<endl;
        cout<<"L1_writes "<<L1_writes<<endl;
-       cout<<"L1_write_misses "<<L1_write_misses<<endl;
+       cout<<"L1_write_misses "<<L1_write_misses<<endl;*/
        myfile.close();
    }
    else cout<<"unable to open file";

@@ -4,6 +4,7 @@
 #include <vector>
 #include <math.h>
 
+typedef unsigned int uint;
 #define DEBUG 0
 using namespace std;
 class block_basic{
@@ -38,7 +39,7 @@ class block_basic{
 }*/
 
 
-
+class cache_class;
 
 class set{
     public:
@@ -51,43 +52,55 @@ class set{
      //ASSOC was removed form constructor brackets
       vector<int> LRU_bits;
       int ASSOC;
-       set(int assoc):block_inset(assoc),LRU_bits(assoc){
+      int cacheLevel;
+      cache_class *next_level;
+       set(int assoc,int cache_level,cache_class *nextLevel):block_inset(assoc),LRU_bits(assoc){
                ASSOC=assoc;
+               cacheLevel=cache_level;
+               next_level=nextLevel;
                for(int i=0;i<assoc;i++){
                LRU_bits[i]=i; //change to (assoc-i)
            }
 #ifdef DEBUG
-           cout<<"set class is initialised"<<endl;
+           cout<<"set class of level "<<cacheLevel<<" is  initialised"<<endl;
          cout<<assoc<<endl;
          for(int i=0;i<assoc;i++) cout<<LRU_bits[i]<<endl;
 #endif
         
     }
 //void set_init(int a){ASSOC=a;}
-    void check_tag(unsigned int tag_address,char operation);
+    //void check_tag(unsigned int tag_address,unsigned int addressNextLevel,cache_class *next_level,char operation,unsigned int &L1_read_misses,unsigned int &L1_write_misses);
+    int check_tag(unsigned int tag_address,char operation,unsigned int address_org);
     void LRU_increment(int block_id);
-    void allocate_and_assign(unsigned int tag_requested,char operation);
+    void allocate_and_assign(unsigned int tag_requested,char operation,unsigned int address_org);
     int minimum();
 };
 
 class cache_class{
     public:
-       
+      int count;
+      int cacheLevel;
       unsigned  int set_number;
       unsigned  int associativity;
        vector <set> set_incache;
        int block_bits,set_bits;
+       uint Level_reads,Level_writes,Level_read_misses,Level_write_misses;
+        cache_class *next_level;
 //cache_class(int Number_of_sets,int associativity_of_set):set_incache(set_number){}
    // {set_number=Number_of_sets; associativity=associativity_of_set;}
-cache_class(int num_sets,int set_assoc,int block_size):set_incache(num_sets,set(set_assoc)){
+cache_class(int num_sets,int set_assoc,int block_size,cache_class *NextLevel,int cache_level):set_incache(num_sets,set(set_assoc,cache_level,NextLevel)){
 
     block_bits=log2(block_size);
     set_bits=log2(num_sets);
     set_number=num_sets;
     associativity=set_assoc;
+    next_level=NextLevel;
+    count=0;
+    cacheLevel=cache_level;
 
 #ifdef DEBUG  
     cout<<"cache class is initialised"<<endl;
+    cout<<count<<endl;
     cout<<num_sets<<endl;
 #endif
 }
@@ -110,7 +123,9 @@ for(i=0;i<set_number;i++)
       //set *set_incache;
      // set_incache= new set[set_number];
      */
+   // void request_block(unsigned int address,char operation,unsigned int &L1_reads,unsigned int &L1_read_misses,unsigned int &L1_writes,unsigned int &L1_write_misses,cache_class *next_level);
     void request_block(unsigned int address,char operation);
+    
     void print_cache();
 };
 

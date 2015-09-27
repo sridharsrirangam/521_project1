@@ -39,6 +39,8 @@ clean:
 
 # type "make clobber" to remove all .o files (leaves sim_cache binary)
 
+text:
+	rm -f *.sid
 clobber:
 	rm -f *.o
 
