@@ -3,7 +3,7 @@
 
 typedef unsigned int uint;
 #define DEBUG 0
-
+int L2_miss_global=0;
 /*
 unsigned int L1_reads=0;
 unsigned int L1_writes=0;
@@ -26,19 +26,20 @@ void cache_class::request_block(unsigned int address,char operation)
     set_id=(address_noblock%address_noset);
     count++;
     cout<<"-------------- "<<endl;
+    cout<<"L "<<cacheLevel<<" cache"<<endl;
     cout<<"# "<<dec<<count<<" : "<<hex<<address<<" ( tag "<<address_noset<<" , index "<<dec<<set_id<<")"<<endl;
     
-    hit_or_miss=set_incache[set_id].check_tag(address_noset,operation,address);
+    hit_or_miss=set_incache[set_id].check_tag(address_noset,operation,address,set_id,set_bits,block_bits);
     if(operation=='r')
-       Level_reads++;
+    { Level_reads++; if(hit_or_miss==0)Level_read_misses++;}
     else if(operation=='w')
-        Level_writes++;
+    {Level_writes++;if(hit_or_miss==0)Level_write_misses++;}
     if(hit_or_miss==0)
     {   if(next_level!=NULL)
         next_level->request_block(address,'r');
 
-        if(operation=='r') Level_read_misses++;
-        else if(operation=='w')Level_write_misses++;
+       // if(operation=='r') Level_read_misses=Level_read_misses+1;
+       // else if(operation=='w')Level_write_misses++;
     }
     
 
@@ -46,15 +47,16 @@ void cache_class::request_block(unsigned int address,char operation)
 
 
 //void set::check_tag(unsigned int tag_address,uint addressNextLevel,cache_class *next_level,char operation,unsigned int &Level_read_misses, unsigned int &Level_write_misses)
-int set::check_tag(unsigned int tag_address,char operation,unsigned int address_org)
+int set::check_tag(unsigned int tag_address,char operation,unsigned int address_org,int calling_set,int set_bits,int block_bits)
 {
     unsigned int tag_requested=tag_address;
     int temp_block_id;
     int hit_in_set=0;
+    
   //  cout<<"tag address "<<hex<<tag_requested<<endl;
     for(int i=0;i<ASSOC;i++)
     {
-        if((tag_requested==block_inset[i].tag)&&(block_inset[i].valid_bit==1)){
+        if((tag_requested==block_inset[i].tag)){//&&(block_inset[i].valid_bit==1)){
             temp_block_id=i;
             hit_in_set=1;
         }//end of if
@@ -69,15 +71,16 @@ int set::check_tag(unsigned int tag_address,char operation,unsigned int address_
            // Level_read_misses++;
        // else if(operation=='w')
            // Level_write_misses++;
-        allocate_and_assign(tag_requested,operation,address_org);
+        allocate_and_assign(tag_requested,operation,address_org,calling_set,set_bits,block_bits);
        /* if(*next_level!=NULL)
         {
         next_level->request_block(addressNextLevel,operation,NULL);
         }*/
-
+        if(cacheLevel==2){if(operation=='r')L2_miss_global++;}
 #ifdef DEBUG
         cout<<hex<<"MISS    ";
         if(operation=='w') cout<<"write"<<endl;
+        cout<<"L2_global is "<<dec<<L2_miss_global<<endl;
 #endif
 
     }
@@ -107,7 +110,7 @@ void set::LRU_increment(int block_id){
     LRU_bits[block_id]=0;
 }
 
-void set::allocate_and_assign(unsigned int tag_requested,char operation,unsigned int address_org)
+void set::allocate_and_assign(unsigned int tag_requested,char operation,unsigned int address_org,int calling_set,int set_bits,int block_bits)
 { 
     int max=0;
     int index_id;
@@ -123,7 +126,8 @@ void set::allocate_and_assign(unsigned int tag_requested,char operation,unsigned
        {
            if(next_level!=NULL)
            {
-            next_level->request_block(address_org,'w');
+            int address_evict = ((block_inset[index_id].tag<<set_bits)+calling_set)<<block_bits;
+            next_level->request_block(address_evict,'w');
            }
 
        }

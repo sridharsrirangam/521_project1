@@ -70,9 +70,9 @@ class set{
     }
 //void set_init(int a){ASSOC=a;}
     //void check_tag(unsigned int tag_address,unsigned int addressNextLevel,cache_class *next_level,char operation,unsigned int &L1_read_misses,unsigned int &L1_write_misses);
-    int check_tag(unsigned int tag_address,char operation,unsigned int address_org);
+    int check_tag(unsigned int tag_address,char operation,unsigned int address_org,int calling_set,int set_bits,int block_bits);
     void LRU_increment(int block_id);
-    void allocate_and_assign(unsigned int tag_requested,char operation,unsigned int address_org);
+    void allocate_and_assign(unsigned int tag_requested,char operation,unsigned int address_org,int calling_set,int set_bits,int block_bits);
     int minimum();
 };
 
