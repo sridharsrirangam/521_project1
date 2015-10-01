@@ -19,7 +19,7 @@ unsigned int total_misses=0;
 void cache_class::request_block(unsigned int address,char operation)
 {
     unsigned int address_noblock,address_noset,set_id;
-   bool hit_or_miss=0;
+   int hit_or_miss=0;
    int block_id;
 
     address_noblock=(address>>block_bits);
@@ -32,9 +32,9 @@ void cache_class::request_block(unsigned int address,char operation)
     
     hit_or_miss=set_incache[set_id].check_tag(address_noset,operation,address,set_id,set_bits,block_bits);
     if(operation=='r')
-    { Level_reads++; if(hit_or_miss==0)Level_read_misses++;}
+    { Level_reads++; if((hit_or_miss==0)||(hit_or_miss==2))Level_read_misses++;}
     else if(operation=='w')
-    {Level_writes++;if(hit_or_miss==0)Level_write_misses++;}
+    {Level_writes++;if((hit_or_miss==0)||(hit_or_miss==2))Level_write_misses++;}
     if(hit_or_miss==0)
     {   if(next_level!=NULL)
         next_level->request_block(address,'r');
@@ -87,11 +87,14 @@ int set::check_tag(unsigned int tag_address,char operation,unsigned int address_
                        index_id=i;
                    }
                }
+
+           int address_evict = ((block_inset[index_id].tag<<set_bits)+calling_set)<<block_bits;
            cout<<hex<<address_org<<"hit in victim"<<endl;
           cout<<"address swapped out"<<victim_Cache->address[block_invictim_id]; 
-          victim_Cache->address[block_invictim_id]=address_org;
+          victim_Cache->address[block_invictim_id]=address_evict;
           cout<<"address swapped in"<<victim_Cache->address[block_invictim_id]<<endl;
            victim_Cache->swap_block(&block_inset[index_id], victim_hit_block);
+           LRU_increment(index_id);
            }
 #ifdef DEBUG
 #endif
@@ -126,7 +129,11 @@ int set::check_tag(unsigned int tag_address,char operation,unsigned int address_
          }//end of if
 
     }
-return hit_in_set;
+    int hit_return;
+    if((hit_in_set==0)&&(hit_in_victim==0)) hit_return=0;
+    else if(hit_in_set==0) hit_return=2;
+    else hit_return=1;
+return hit_return;
 }
 
 
