@@ -62,9 +62,10 @@ int main(int argc, char *argv[])
    // if(L2_size==0)
     
     cache_class *next_level_L2;
-   cache_class L2_cache((L2_size/(L2_assoc*block_size)),L2_assoc,block_size,NULL,2);
-    if(L2_size!=0)
-    { L2_cache.Level_reads=0;
+   cache_class L2_cache((L2_number_of_sets),L2_assoc,block_size,NULL,2,0);
+    if((L2_size!=0)&&(L2_assoc!=0))
+    {
+     L2_cache.Level_reads=0;
     L2_cache.Level_read_misses=0;
     L2_cache.Level_writes=0;
     L2_cache.Level_write_misses=0;
@@ -74,7 +75,7 @@ int main(int argc, char *argv[])
     {
         next_level_L2=NULL;
     }
-    cache_class L1_cache((L1_size/(L1_assoc*block_size)),L1_assoc,block_size,next_level_L2,1);
+    cache_class L1_cache((L1_size/(L1_assoc*block_size)),L1_assoc,block_size,next_level_L2,1,vc_num_blocks);
     L1_cache.Level_reads=0;
     L1_cache.Level_writes=0;
     L1_cache.Level_read_misses=0;

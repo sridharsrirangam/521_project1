@@ -38,8 +38,44 @@ class block_basic{
 
 }*/
 
-
+//victim begins
 class cache_class;
+
+class victim_cache {
+    public:
+    vector<block_basic> block_invictim;
+   vector<int> LRU_bits_victim;
+   vector<unsigned int> address;
+   int NUM_BLOCK;
+   int block_bits;
+   cache_class *next_level;
+    victim_cache(int num_blocks,cache_class *NextLevel,int blockBits):block_invictim(num_blocks),LRU_bits_victim(num_blocks),address(num_blocks){
+        NUM_BLOCK=num_blocks;
+        block_bits=blockBits;
+        next_level=NextLevel;
+        for(int i=0;i<NUM_BLOCK;i++)
+        {
+            LRU_bits_victim[i]=i;
+        }
+#ifdef DEBUG
+        cout<<"victim cache is initiated"<<endl;
+        cout<<"LRU bits of victim cache ";
+        for(int i=0;i<NUM_BLOCK;i++){
+            cout<<LRU_bits_victim[i]<<endl;
+#endif      
+        }//end of for
+
+    }//end of constructor
+    
+    void victim_LRU_increment(int block_id);
+    int check_tag_victim(unsigned int full_address,block_basic **hit_block,int *block_invictim_id );
+    void swap_block(block_basic *swap_input,block_basic *swap_output);
+    void allocate_in_victim(unsigned int tag_requested,unsigned int address_org,bool valid_bit,bool dirty_bit);
+    int minimum();
+};
+
+
+
 
 class set{
     public:
@@ -54,12 +90,16 @@ class set{
       int ASSOC;
       int cacheLevel;
       cache_class *next_level;
-       set(int assoc,int cache_level,cache_class *nextLevel):block_inset(assoc),LRU_bits(assoc){
+      int num_victim;
+      victim_cache *victim_Cache;
+       set(int assoc,int cache_level,cache_class *nextLevel,int num_blocks_victim,victim_cache *victimCache):block_inset(assoc),LRU_bits(assoc){
                ASSOC=assoc;
                cacheLevel=cache_level;
                next_level=nextLevel;
+               num_victim=num_blocks_victim;
                for(int i=0;i<assoc;i++){
                LRU_bits[i]=i; //change to (assoc-i)
+               victim_Cache=victimCache;
            }
 #ifdef DEBUG
            cout<<"set class of level "<<cacheLevel<<" is  initialised"<<endl;
@@ -86,9 +126,12 @@ class cache_class{
        int block_bits,set_bits;
        uint Level_reads,Level_writes,Level_read_misses,Level_write_misses;
         cache_class *next_level;
+        victim_cache victimCache;
+       victim_cache *victimPntr;
+        int num_victim;
 //cache_class(int Number_of_sets,int associativity_of_set):set_incache(set_number){}
    // {set_number=Number_of_sets; associativity=associativity_of_set;}
-cache_class(int num_sets,int set_assoc,int block_size,cache_class *NextLevel,int cache_level):set_incache(num_sets,set(set_assoc,cache_level,NextLevel)){
+cache_class(int num_sets,int set_assoc,int block_size,cache_class *NextLevel,int cache_level,int num_blocks_victim):victimCache(num_blocks_victim,NextLevel,log2(block_size)),set_incache(num_sets,set(set_assoc,cache_level,NextLevel,num_blocks_victim,&victimCache)){
 
     block_bits=log2(block_size);
     set_bits=log2(num_sets);
@@ -97,7 +140,9 @@ cache_class(int num_sets,int set_assoc,int block_size,cache_class *NextLevel,int
     next_level=NextLevel;
     count=0;
     cacheLevel=cache_level;
-
+    num_victim=num_blocks_victim;
+    victimPntr=&victimCache;
+   
 #ifdef DEBUG  
     cout<<"cache class is initialised"<<endl;
     cout<<count<<endl;
