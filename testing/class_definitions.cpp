@@ -94,6 +94,11 @@ int set::check_tag(unsigned int tag_address,char operation,unsigned int address_
           victim_Cache->address[block_invictim_id]=address_evict;
           cout<<"address swapped in"<<victim_Cache->address[block_invictim_id]<<endl;
            victim_Cache->swap_block(&block_inset[index_id], victim_hit_block);
+           //last addred code to correct dirty bit issue
+           if(operation=='w')
+           {block_inset[index_id].dirty_bit=1;
+           }
+           
            LRU_increment(index_id);
            }
 #ifdef DEBUG
