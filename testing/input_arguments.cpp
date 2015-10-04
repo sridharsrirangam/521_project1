@@ -7,7 +7,7 @@
 //#include <math.h> //used for log2
 #include "class_definitions.h"
 
-#define DEBUG 0 
+#define  DEBUG 0 
 
 using namespace std;
 
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     }
 
     //end of argument reads
-#ifdef DEBUG
+#if DEBUG
     cout<<"block size is "<<block_size<<endl;
     cout<<"L1 size is "<<L1_size<<endl;
     cout<<"L1 asscoc "<<L1_assoc<<endl;
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
          
          L1_cache.request_block(addr_file,operation);
          
-#ifdef DEBUG
+#if DEBUG
         // cout<<hex<<addr_file<<endl;
 #endif
        }

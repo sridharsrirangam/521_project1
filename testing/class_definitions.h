@@ -21,7 +21,7 @@ class block_basic{
 
     block_basic(){
 
-        cout<<"block class is initialted"<<endl;
+        //cout<<"block class is initialted"<<endl;
 
         tag=0;
         valid_bit=0;
@@ -57,13 +57,13 @@ class victim_cache {
         {
             LRU_bits_victim[i]=i;
         }
-#ifdef DEBUG
+#if DEBUG
         cout<<"victim cache is initiated"<<endl;
         cout<<"LRU bits of victim cache ";
         for(int i=0;i<NUM_BLOCK;i++){
             cout<<LRU_bits_victim[i]<<endl;
+       }//end of for
 #endif      
-        }//end of for
 
     }//end of constructor
     
@@ -101,7 +101,7 @@ class set{
                LRU_bits[i]=i; //change to (assoc-i)
                victim_Cache=victimCache;
            }
-#ifdef DEBUG
+#if DEBUG
            cout<<"set class of level "<<cacheLevel<<" is  initialised"<<endl;
          cout<<assoc<<endl;
          for(int i=0;i<assoc;i++) cout<<LRU_bits[i]<<endl;
@@ -143,7 +143,7 @@ cache_class(int num_sets,int set_assoc,int block_size,cache_class *NextLevel,int
     num_victim=num_blocks_victim;
     victimPntr=&victimCache;
    
-#ifdef DEBUG  
+#if DEBUG  
     cout<<"cache class is initialised"<<endl;
     cout<<count<<endl;
     cout<<num_sets<<endl;

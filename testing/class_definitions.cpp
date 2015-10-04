@@ -26,10 +26,11 @@ void cache_class::request_block(unsigned int address,char operation)
     address_noset=(address_noblock>>set_bits);
     set_id=(address_noblock%address_noset);
     count++;
+#if DEBUG
     cout<<"-------------- "<<endl;
     cout<<"L "<<cacheLevel<<" cache"<<endl;
     cout<<"# "<<dec<<count<<" : "<<hex<<address<<" ( tag "<<address_noset<<" , index "<<dec<<set_id<<")"<<endl;
-    
+#endif    
     hit_or_miss=set_incache[set_id].check_tag(address_noset,operation,address,set_id,set_bits,block_bits);
     if(operation=='r')
     { Level_reads++; if((hit_or_miss==0)||(hit_or_miss==2))Level_read_misses++;}
@@ -89,10 +90,10 @@ int set::check_tag(unsigned int tag_address,char operation,unsigned int address_
                }
 
            int address_evict = ((block_inset[index_id].tag<<set_bits)+calling_set)<<block_bits;
-           cout<<hex<<address_org<<"hit in victim"<<endl;
-          cout<<"address swapped out"<<victim_Cache->address[block_invictim_id]; 
+          // cout<<hex<<address_org<<"hit in victim"<<endl;
+         // cout<<"address swapped out"<<victim_Cache->address[block_invictim_id]; 
           victim_Cache->address[block_invictim_id]=address_evict;
-          cout<<"address swapped in"<<victim_Cache->address[block_invictim_id]<<endl;
+         // cout<<"address swapped in"<<victim_Cache->address[block_invictim_id]<<endl;
            victim_Cache->swap_block(&block_inset[index_id], victim_hit_block);
            //last addred code to correct dirty bit issue
            if(operation=='w')
@@ -101,7 +102,7 @@ int set::check_tag(unsigned int tag_address,char operation,unsigned int address_
            
            LRU_increment(index_id);
            }
-#ifdef DEBUG
+#if DEBUG
 #endif
 
 
@@ -113,7 +114,7 @@ int set::check_tag(unsigned int tag_address,char operation,unsigned int address_
         next_level->request_block(addressNextLevel,operation,NULL);
         }*/
        // if(cacheLevel==2){if(operation=='r')L2_miss_global++;}
-#ifdef DEBUG
+#if DEBUG
         cout<<hex<<"MISS    ";
         if(operation=='w') cout<<"write"<<endl;
         cout<<"L2_global is "<<dec<<L2_miss_global<<endl;
@@ -123,7 +124,7 @@ int set::check_tag(unsigned int tag_address,char operation,unsigned int address_
     else if(hit_in_set==1)
     {
         //hit handling
-      #ifdef DEBUG
+      #if DEBUG
         cout<<"HIT  "<<operation<<endl;
 #endif
        
@@ -305,7 +306,7 @@ void victim_cache::swap_block(block_basic *swap_input, block_basic *swap_output)
     swap_output->valid_bit=temp.valid_bit;
     swap_output->dirty_bit=temp.dirty_bit;
 
-    cout<<"swap function called "<<"input "<<swap_input->tag<<" output tag "<<swap_output->tag<<endl;
+//    cout<<"swap function called "<<"input "<<swap_input->tag<<" output tag "<<swap_output->tag<<endl;
 }
 
 //TODO sent L2 pointer to victim
@@ -330,14 +331,17 @@ void victim_cache::allocate_in_victim(unsigned int tag_requested,unsigned int ad
         }
     
     }
+#if DEBUG
     cout<<"victim allocate function called"<<endl;
+#endif
     block_invictim[index_id].tag=tag_requested;
     block_invictim[index_id].valid_bit=valid_bit;
     block_invictim[index_id].dirty_bit=dirty_bit;
     address[index_id]=address_org;
     victim_LRU_increment(index_id);
-
+#if DEBUG
     cout<<" Tag "<<hex<<tag_requested<<" address "<<address_org<<" v "<<valid_bit<<" d "<<dirty_bit<<endl;
+#endif
 }
 
 
